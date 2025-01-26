@@ -1,20 +1,9 @@
 import os
 import shutil
 import importlib
-<<<<<<< HEAD
-import re
-from crewai import Task, Crew, Process, Agent
-=======
 from crewai import Task, Crew, Process
->>>>>>> parent of b953067 (update)
 from dotenv import load_dotenv
 from agents import create_agents
-import time
-from litellm import Timeout, completion
-import logging
-
-# Configure logging
-logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Load environment variables from .env file
 load_dotenv()
@@ -22,37 +11,16 @@ load_dotenv()
 # Define the model to be used by the agents
 model_to_use = f"ollama/{os.getenv('OLLAMA_MODEL')}"
 
-<<<<<<< HEAD
-# Configure manager LLM for hierarchical processes
-# Use a dictionary to hold the configuration
-MANAGER_LLM_CONFIG = {
-    "model": OLLAMA_MODEL,
-    "api_base": "http://localhost:11434",
-    "temperature": 0.3,
-    "stream": False  # Remove streaming for now, focus on core issue
-}
-
-# Genre configuration
-GENRE = os.getenv('GENRE', 'literary_fiction')
-=======
 # Specify the genre from the .env file
 GENRE = os.getenv('GENRE', 'literary_fiction')  # Default to 'literary_fiction' if not specified
->>>>>>> parent of b953067 (update)
 
 # Function to load configuration from the selected genre
 def load_genre_config(genre):
     try:
         genre_module = importlib.import_module(f"genres.{genre}")
-<<<<<<< HEAD
-        return {
-            k: v for k, v in genre_module.__dict__.items()
-            if not k.startswith("_") and k.isupper()
-        }
-=======
         config = {k: v for k, v in genre_module.__dict__.items() if not k.startswith("_")}
         config['GENRE'] = genre  # Add the genre name to the config
         return config
->>>>>>> parent of b953067 (update)
     except ModuleNotFoundError:
         print(f"Genre configuration for '{genre}' not found. Using default settings.")
         return {}
@@ -63,106 +31,6 @@ genre_config = load_genre_config(GENRE)
 # Get the number of chapters from the genre config
 num_chapters = genre_config.get('NUM_CHAPTERS', 3)
 
-<<<<<<< HEAD
-# Wrapper class for LiteLLM
-class LiteLLMCompletionWrapper:
-    def __init__(self, model, api_base, temperature=0.3, stream=False):
-        self.model = model
-        self.api_base = api_base
-        self.temperature = temperature
-        self.stream = stream
-        self.stop = None  # Add the 'stop' attribute
-
-    def __call__(self, *args, **kwargs):
-        messages = kwargs.get('messages', [])
-        response = completion(
-            model=self.model,
-            messages=messages,
-            api_base=self.api_base,
-            temperature=self.temperature
-        )
-        return response.choices[0].message.content
-
-    def supports_stop_words(self):
-        return False  # Ollama doesn't seem to support stop words
-
-# Create agents using the create_agents function
-agents = create_agents(None, num_chapters, "", genre_config)
-(
-    story_planner, outline_creator, setting_builder, character_agent,
-    relationship_architect, plot_agent, writer, editor, memory_keeper,
-    researcher, critic, reviser, outline_compiler, feedback_reviewer,
-    dialogue_specialist, setting_description_agent
-) = agents
-
-# Set the LLM for each agent using the wrapper class
-for agent in agents:
-    agent.llm = LiteLLMCompletionWrapper(
-        model=MANAGER_LLM_CONFIG["model"],
-        api_base=MANAGER_LLM_CONFIG["api_base"],
-        temperature=MANAGER_LLM_CONFIG["temperature"],
-        stream=MANAGER_LLM_CONFIG["stream"]
-    )
-# Initial prompt
-initial_prompt = os.getenv('INITIAL_PROMPT',
-    "A group of friends decides to spend a memorable day at the beach...")
-
-# Outline generation tasks
-story_planning_task = Task(
-    description=f"""Develop a high-level story arc for a {num_chapters}-chapter story based on the initial prompt: "{initial_prompt}".
-    Consider the genre-specific pacing: {genre_config.get('PACING_SPEED_CHAPTER_START')}, {genre_config.get('PACING_SPEED_CHAPTER_MID')}, {genre_config.get('PACING_SPEED_CHAPTER_END')}.
-    Identify major plot points, character arcs, and turning points across the entire narrative.""",
-    expected_output="A comprehensive story arc plan with major plot points and character arcs.",
-    agent=story_planner
-)
-
-setting_building_task = Task(
-    description=f"""Establish all settings and world elements needed for the {num_chapters}-chapter story, ensuring they are rich, consistent, and dynamically integrated as the story progresses.
-    Consider the genre-specific setting integration: {genre_config.get('SETTING_INTEGRATION')}.
-    """,
-    expected_output="Detailed descriptions of settings and world elements.",
-    agent=setting_builder
-)
-
-character_development_task = Task(
-    description=f"""Develop and maintain consistent, engaging, and evolving characters throughout the {num_chapters}-chapter book.
-    Provide full names (first and last), ages, detailed backstories, motivations, personalities, strengths, weaknesses, and relationships for each character.
-    Assign character stats (e.g., Intelligence, Charisma, etc.) on a scale of 1-10 and define their speech patterns (e.g., accent, tone, verbosity).
-    Ensure characters are diverse and well-rounded.
-    Consider the genre-specific character depth: {genre_config.get('CHARACTER_DEPTH')}.
-    """,
-    expected_output="Detailed character profiles for all main characters.",
-    agent=character_agent
-)
-
-relationship_architecture_task = Task(
-    description=f"""Develop and manage the relationships between characters, including family structures, friendships, rivalries, and romantic relationships.
-    Ensure relationship dynamics are realistic, engaging, and contribute to the overall narrative.
-    Provide detailed relationship backstories and evolution throughout the {num_chapters}-chapter story.
-    Consider the genre-specific relationship depth: {genre_config.get('CHARACTER_RELATIONSHIP_DEPTH')}.
-    """,
-    expected_output="A detailed map of character relationships and their evolution.",
-    agent=relationship_architect
-)
-
-outline_creator_task = Task(
-    description=f"""Generate detailed chapter outlines based on the story arc plan for a {num_chapters}-chapter story.
-    Include specific chapter titles, key events, character developments, setting, and tone for each chapter.
-    Consider the genre-specific narrative style: {genre_config.get('NARRATIVE_STYLE')}.
-    Create outlines for all {num_chapters} chapters
-    """,
-    expected_output="Detailed chapter outlines for the entire book.",
-    agent=outline_creator
-)
-
-outline_compiler_task = Task(
-    description=f"""Compile the complete book outline for a {num_chapters}-chapter story, integrating the overall story arc plan, setting details, character profiles, relationship dynamics, and individual chapter outlines into a single, cohesive document.
-    Ensure the outline is well-structured, detailed, and follows the specified format.
-    Output the ENTIRE outline, including all sections and all {num_chapters} chapters.""",
-    expected_output="A complete and detailed book outline.",
-    agent=outline_compiler
-)
-=======
 # Create agents using the function from agents.py, passing num_chapters and an empty outline_context for now
 agents = create_agents(model_to_use, num_chapters, "", genre_config)
 
@@ -171,7 +39,6 @@ story_planner, outline_creator, setting_builder, character_agent, relationship_a
 
 # Get the initial prompt from the .env file
 initial_prompt = os.getenv('INITIAL_PROMPT', "A group of friends decides to spend a memorable day at the beach. Each friend has a different idea of what makes a perfect beach day, leading to a series of adventures and misadventures as they try to make the most of their time together.")
->>>>>>> parent of b953067 (update)
 
 # Define the task for the Story Planner agent
 story_planning_task = Task(
@@ -376,66 +243,12 @@ for agent in agents:
     agent.goal = agent.goal.replace("{outline_context}", outline_context)
     agent.backstory = agent.backstory.replace("{outline_context}", outline_context)
 
-<<<<<<< HEAD
-# Chapter generation functions
-def create_chapter_tasks(chapter_number, outline_context, genre_config, agents, manager_llm_config):
-=======
 # Function to create tasks for each chapter
 def create_chapter_tasks(chapter_number, outline_context, context_window_size, genre_config):
->>>>>>> parent of b953067 (update)
     min_words = genre_config.get('MIN_WORDS_PER_CHAPTER', 1600)
     max_words = genre_config.get('MAX_WORDS_PER_CHAPTER', 3000)
-
-    # Find the agents by their role
-    researcher = next((agent for agent in agents if agent.role == 'Researcher'), None)
-    setting_description_agent = next((agent for agent in agents if agent.role == 'Setting Description Agent'), None)
-    dialogue_specialist = next((agent for agent in agents if agent.role == 'Dialogue Specialist'), None)
-    writer = next((agent for agent in agents if agent.role == 'Writer'), None)
-    critic = next((agent for agent in agents if agent.role == 'Critic'), None)
-    reviser = next((agent for agent in agents if agent.role == 'Reviser'), None)
-    editor = next((agent for agent in agents if agent.role == 'Editor'), None)
-    feedback_reviewer = next((agent for agent in agents if agent.role == 'Feedback Reviewer'), None)
-
-    # Create tasks with the LLM configuration directly in the task
+    
     research_task = Task(
-<<<<<<< HEAD
-        description=f"""Research details for Chapter {chapter_number}. Context: {outline_context}""",
-        expected_output="Relevant research data with citations",
-        agent=researcher,
-        llm=manager_llm_config
-    )
-
-    setting_description_task = Task(
-        description=f"""Create a detailed setting description for Chapter {chapter_number} based on the outline: {outline_context}.
-        Focus on vivid imagery, sensory details, and thematic relevance.""",
-        expected_output="A richly detailed description of the chapter's setting",
-        agent=setting_description_agent,
-        llm=manager_llm_config
-    )
-
-    dialogue_task = Task(
-        description=f"""Develop all dialogue sequences for Chapter {chapter_number}, adhering to character profiles and the outline: {outline_context}.
-        Ensure dialogue is natural, advances the plot, and reveals character.""",
-        expected_output="Realistic and engaging dialogue that aligns with character and plot",
-        agent=dialogue_specialist,
-        llm=manager_llm_config
-    )
-
-    write_task = Task(
-        description=f"""Write Chapter {chapter_number} ({min_words}-{max_words} words) based on the outline: {outline_context}. MUST INCLUDE:
-        - Detailed character interactions
-        - Vivid setting descriptions from the Setting Description Agent
-        - Multi-paragraph dialogue sequences from the Dialogue Specialist
-        - Sensory details (smells, sounds, textures)
-        - Internal character monologues
-        If below {min_words} words, ADD:
-        - Extended scene descriptions
-        - Additional character backstory elements
-        - Environmental observations
-        Incorporate creative twists with a frequency of {genre_config.get('CREATIVE_TWISTS_FREQUENCY')}, experiment with narrative voice as defined by {genre_config.get('NARRATIVE_VOICE_EXPERIMENTATION')}, and explore themes with a freedom level of {genre_config.get('THEMATIC_EXPLORATION_FREEDOM')}.
-        """,
-        expected_output="Full chapter text meeting word count requirements",
-=======
         description=f"""Research any specific details needed for Chapter {chapter_number}, such as information about beach activities, marine life, or coastal weather patterns. Refer to the outline for context: {outline_context}""",
         expected_output=f"Accurate and relevant research findings to support Chapter {chapter_number}.",
         agent=researcher
@@ -463,34 +276,22 @@ def create_chapter_tasks(chapter_number, outline_context, context_window_size, g
     Always reference the chapter outline, previous chapter content (as summarized by the Memory Keeper), established world elements, and character developments to ensure consistency and coherence.
         """,
         expected_output=f"Chapter {chapter_number} written in engaging prose with proper paragraph formatting and a minimum of {min_words} words.",
->>>>>>> parent of b953067 (update)
         agent=writer,
-        context=[research_task, setting_description_task, dialogue_task, outline_creator_task],
-        llm=manager_llm_config
+        context=[research_task, outline_creator_task]
     )
     
     critic_task = Task(
         description=f"""Provide a critical review of Chapter {chapter_number}, identifying any plot holes, inconsistencies, or areas that need improvement. Refer to the outline for context: {outline_context}""",
         expected_output=f"Constructive criticism and suggestions for enhancing Chapter {chapter_number}.",
         agent=critic,
-<<<<<<< HEAD
-        context=[write_task],
-        llm=manager_llm_config
-=======
         context=[outline_creator_task, write_task]
->>>>>>> parent of b953067 (update)
     )
     
     revise_task = Task(
         description=f"""Revise Chapter {chapter_number} based on feedback from the Critic and Editor. Ensure the chapter is coherent, consistent, and polished. Refer to the outline for context: {outline_context}""",
         expected_output=f"A revised version of Chapter {chapter_number} that incorporates feedback and improvements.",
         agent=reviser,
-<<<<<<< HEAD
-        context=[write_task, critic_task],
-        llm=manager_llm_config
-=======
         context=[outline_creator_task, write_task]
->>>>>>> parent of b953067 (update)
     )
     
     edit_task = Task(
@@ -499,27 +300,10 @@ def create_chapter_tasks(chapter_number, outline_context, context_window_size, g
         Refer to the outline for context: {outline_context}""",
         expected_output=f"The final, edited version of Chapter {chapter_number}, meeting the minimum word count requirement.",
         agent=editor,
-<<<<<<< HEAD
-        context=[revise_task],
-        llm=manager_llm_config
-    )
-
-    feedback_review_task = Task(
-        description=f"""Review and synthesize feedback from the Critic and Editor for Chapter {chapter_number}.
-        Provide the Writer with a prioritized list of actionable feedback.""",
-        expected_output="Concise, prioritized feedback for the Writer",
-        agent=feedback_reviewer,
-        context=[critic_task, edit_task],
-        llm=manager_llm_config
-    )
-
-    return [research_task, setting_description_task, dialogue_task, write_task, critic_task, revise_task, edit_task, feedback_review_task]
-=======
         context=[outline_creator_task, write_task]
     )
     
     return [research_task, write_task, critic_task, revise_task, edit_task]
->>>>>>> parent of b953067 (update)
 
 # Function to clear the output folder
 def clear_output_folder(folder):
@@ -541,61 +325,6 @@ context_window_size = int(os.getenv('OLLAMA_CONTEXT_WINDOW', 4096))  # Default t
 
 # Loop through each chapter and create a crew to write it
 for chapter_number in range(1, num_chapters + 1):
-<<<<<<< HEAD
-    chapter_tasks = create_chapter_tasks(chapter_number, outline_context, genre_config, agents, MANAGER_LLM_CONFIG)
-
-    # Configure hierarchical crew with proper manager
-    chapter_crew = Crew(
-        agents=[agent for agent in agents if agent.role in ['Writer', 'Researcher', 'Critic', 'Reviser', 'Editor', 'Feedback Reviewer', 'Dialogue Specialist', 'Setting Description Agent']],
-        tasks=chapter_tasks,
-        verbose=True,
-        process=Process.hierarchical,
-        manager_llm=MANAGER_LLM_CONFIG
-    )
-
-    # Generation with validation
-    valid = False
-    attempts = 0
-    while not valid and attempts < 3:
-        try:
-            for task in chapter_tasks:
-                logging.info(f"Starting task: {task.description[:50]}... by {task.agent.role}")
-
-                response = task.execute(context=task.context)
-                logging.info(f"Task {task.description[:50]}... by {task.agent.role} completed")
-
-                if task.agent.role == 'Writer':
-                    chapter_content = response
-                task.output = type('obj', (object,), {'value': response, 'raw_output': response, 'task': task})()
-
-            # Validate word count
-            word_count = len(re.findall(r'\w+', chapter_content))
-            if word_count >= genre_config['MIN_WORDS_PER_CHAPTER']:
-                valid = True
-            else:
-                print(f"Regenerating Chapter {chapter_number} (attempt {attempts+1}), word count: {word_count}")
-                attempts += 1
-                # Reset tasks for regeneration
-                for task in chapter_tasks:
-                    task.output = None
-
-        except Timeout as e:  # Catch timeout errors
-            logging.error(f"Timeout error during chapter generation: {e}")
-            attempts += 1
-            time.sleep(5) # short delay before retry
-
-            # Reset tasks for regeneration
-            for task in chapter_tasks:
-                task.output = None
-
-        except Exception as e:
-            logging.error(f"Error generating chapter {chapter_number}: {str(e)}")
-            attempts += 1
-
-            # Reset tasks for regeneration
-            for task in chapter_tasks:
-                task.output = None
-=======
     # Create tasks for the current chapter
     chapter_tasks = create_chapter_tasks(chapter_number, outline_context, context_window_size, genre_config)
 
@@ -609,7 +338,6 @@ for chapter_number in range(1, num_chapters + 1):
 
     # Run the Crew to generate the chapter
     chapter_crew.kickoff()
->>>>>>> parent of b953067 (update)
 
     # Access the output of the write_task directly
     chapter_content = write_task.output
