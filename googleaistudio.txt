@@ -23,6 +23,17 @@ To develop an AI-agentic system capable of writing a full-length novel, leveragi
 
 ## Changelog: (New entries go here)
 
+2025-01-27 10:00 - Added debug logging to `create_chapter_tasks` in `main.py` (Action 1.1)
+    - **Code Changes:**
+        *   Modified `main.py` in `create_chapter_tasks` function to include debug print statements for `write_task` and `write_task.output`.
+    - **Reasoning/Rationale:**
+        *   To debug `AttributeError: 'TaskOutput' object has no attribute 'output_value'` and understand the content of `write_task.output` during chapter generation.
+    - **Insights/Observations:**
+        *   This will help diagnose why accessing `output_value` is failing and inspect the `TaskOutput` object.
+    - **Next Steps/Action Items:**
+        *   Rerun `main.py` with these changes and provide new logs (`book_writer.log.txt` and console output).
+        *   Analyze logs to understand the value of `write_task.output` and the cause of the `AttributeError`.
+
 2025-01-26 21:30 - Implemented Scene Reordering Critic and Reviser Agents (agents.py, main.py), Fixed TaskOutput Access in main.py, Added Agent Communication Logging (main.py, agents.py)
     - **Code Changes:**
         *   Modified `Critic` agent in `agents.py` to include scene order evaluation in goal/backstory.

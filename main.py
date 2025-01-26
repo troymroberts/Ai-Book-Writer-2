@@ -97,25 +97,7 @@ comm_logger.info(f"Agent Communication: Source=Main, Task=Story Planning, Target
 
 # Define the task for the Setting Builder agent
 setting_building_task = Task(
-    description=f"""{genre_config.get('SETTING_BUILDING_DESCRIPTION', "Establish all settings and world elements needed for the entire story.")}
-
-    Format your response as:
-    SETTING_DETAILS:
-
-    [LOCATION NAME - Chapter Number(s)]:
-    - Physical Description: [detailed description including sensory details]
-    - Atmosphere and Mood: [mood, time of day, lighting, weather, etc.]
-    - Key Features: [important objects, layout elements, points of interest]
-    - Thematic Resonance: [how this setting enhances story themes and character emotions]
-
-    [RECURRING SETTINGS - Locations Appearing Multiple Times]:
-    - [LOCATION NAME]: [Description of how this setting evolves across chapters, noting changes and recurring elements]
-
-    [SETTING TRANSITIONS - Connections Between Locations]:
-    - [LOCATION 1] to [LOCATION 2]: [Describe how characters move between these settings and any significant spatial relationships or transitions]
-
-    Ensure every setting is vividly described and contributes meaningfully to the narrative.
-    """,
+    description=f"""{genre_config.get('SETTING_BUILDING_DESCRIPTION', "Establish all settings and world elements needed for the entire story.")}""",
     expected_output="Detailed descriptions of all settings and world elements.",
     agent=setting_builder
 )
@@ -125,31 +107,7 @@ comm_logger.info(f"Agent Communication: Source=Main, Task=Setting Building, Targ
 # Define the task for the Character Agent
 character_development_task = Task(
     description=f"""{genre_config.get('CHARACTER_DEVELOPMENT_DESCRIPTION', "Develop detailed character profiles for all main and significant supporting characters.")}
-    Create character arcs that span across {num_chapters} chapters.
-
-    Format your response as:
-    CHARACTER_PROFILES:
-
-    [CHARACTER FULL NAME] (Age: [Character's Age])
-    - Backstory: [Detailed backstory relevant to their current role in the story, including significant life events and relationships]
-    - Motivations: [Primary and secondary motivations driving their actions]
-    - Personality: [Key personality traits, including strengths, weaknesses, quirks, and how they interact with others]
-    - Relationships: [Significant relationships with other characters, noting dynamics, history, and current status. Include family, friends, rivals, love interests, etc.]
-    - Physical Description: [Detailed physical description, including distinguishing features]
-    - Character Stats:
-        - Intelligence: [1-10 rating]
-        - Charisma: [1-10 rating]
-        - Education: [e.g., High School, College, Self-Educated]
-        - Other relevant stats for the story
-    - Speech Patterns: [Description of how the character speaks, including accent, tone, verbosity, and any specific speech habits or catchphrases]
-    - Arc Overview: [Intended character arc across the story - how will they change and develop?]
-
-    [CHARACTER ARCS - Detailed Chapter Breakdown]:
-    - [CHARACTER FULL NAME] - Chapter [CHAPTER NUMBER]: [Describe specific character developments, actions, and emotional states within this chapter, linking to their overall arc]
-
-    Ensure each character is richly developed and their journey is compelling and consistent.
-    Limit character arcs and plot points to {num_chapters} chapters only.
-    """,
+    Create character arcs that span across {num_chapters} chapters.""",
     expected_output="Detailed character profiles and development plans, including full names, ages, backstories, motivations, personalities, relationships, and arc overviews.",
     agent=character_agent
 )
@@ -159,24 +117,7 @@ comm_logger.info(f"Agent Communication: Source=Main, Task=Character Development,
 # Define the task for the Relationship Architect agent
 relationship_architecture_task = Task(
     description=f"""{genre_config.get('RELATIONSHIP_ARCHITECTURE_DESCRIPTION', "Develop and manage the relationships between characters, including family structures, friendships, rivalries, and romantic relationships.")}
-    Create relationship dynamics that are realistic, engaging, and contribute to the overall narrative.
-
-    Format your response as:
-    RELATIONSHIP_DYNAMICS:
-
-    [CHARACTER 1 FULL NAME] and [CHARACTER 2 FULL NAME]:
-    - Relationship Type: [e.g., siblings, friends, rivals, lovers, parent-child]
-    - Relationship Backstory: [Detailed backstory of their relationship, including how they met, significant events, and past conflicts or alliances]
-    - Current Status: [Description of their current relationship status, including any ongoing conflicts, loyalties, or emotional bonds]
-    - Relationship Arc: [How their relationship will evolve throughout the story, potential turning points, and impact on the plot]
-
-    [FAMILY STRUCTURE]:
-    - Family Name: [Last name]
-    - Family Members: [List of family members with their roles (e.g., father, mother, sister, brother)]
-    - Family Dynamic: [Description of the overall family dynamic, including relationships between members, family values, and any significant family history]
-
-    Ensure relationship dynamics are nuanced and contribute to the depth of the story.
-    """,
+    Create relationship dynamics that are realistic, engaging, and contribute to the overall narrative.""",
     expected_output="Detailed relationship dynamics and family structures.",
     agent=relationship_architect,
     context=[character_development_task]  # Ensure access to character details
@@ -187,19 +128,7 @@ comm_logger.info(f"Agent Communication: Source=Main, Task=Relationship Architect
 # Define the task for the Item Developer agent
 item_development_task = Task(
     description=f"""{genre_config.get('ITEM_DEVELOPMENT_DESCRIPTION', "Develop detailed item profiles for all significant items in the story.")}
-    Create items that are relevant to the plot and world-building of the {num_chapters} chapter story.
-
-    Format your response as:
-    ITEM_PROFILES:
-
-    [ITEM NAME]
-    - Description: [Detailed description of the item, including its physical appearance, history, and any special properties]
-    - Purpose in Story: [How the item is used in the plot and its significance to the characters or events]
-    - Symbolic Meaning (if any): [Any symbolic or thematic resonance the item carries]
-    - Chapters/Scenes of Appearance: [List of chapters and scenes where the item appears or is relevant]
-
-    Ensure each item is well-defined and its role in the story is clear.
-    """,
+    Create items that are relevant to the plot and world-building of the {num_chapters} chapter story.""",
     expected_output="Detailed item profiles with descriptions, purpose, symbolic meaning, and chapters/scenes of appearance.",
     agent=item_developer
 )
@@ -213,33 +142,6 @@ outline_creator_task = Task(
     Create a detailed chapter outline for each of the {num_chapters} chapters individually, based on the following premise, the developed story arc plan, character profiles, relationship dynamics, setting details, and item profiles:
 
     Initial Premise: {initial_prompt}
-
-    Story Arc Plan: [Provided by the Story Planner agent]
-
-    Character Profiles: [Provided by the Character Agent]
-
-    Relationship Dynamics: [Provided by the Relationship Architect Agent]
-
-    Setting Details: [Provided by the Setting Builder Agent]
-
-    Item Profiles: [Provided by the Item Developer Agent]
-
-    Follow this EXACT format for each chapter:
-
-    Chapter [N]: [Chapter Title]
-    Title: [Same title as above]
-    Key Events:
-    - [Event 1]
-    - [Event 2]
-    - [Event 3]
-    Character Developments: [Specific character moments and changes in this chapter]
-    Setting: [Specific location and atmosphere for this chapter]
-    Tone: [Specific emotional and narrative tone for this chapter]
-    Items: [List any important items that feature prominently in this chapter]
-
-    Repeat EXACTLY this format for all {num_chapters} chapters.
-
-    Ensure that each chapter outline is comprehensive and detailed, providing a solid foundation for the writing process.
     """,
     expected_output=f"A detailed chapter outline for each of the {num_chapters} chapters.",
     agent=outline_creator,
@@ -259,16 +161,6 @@ outline_compiler_task = Task(
     - Relationship Dynamics: [Provided by the Relationship Architect Agent]
     - Chapter Outlines: [Provided by the Outline Creator Agent]
     - Item Profiles: [Provided by the Item Developer Agent]
-
-    Format your response as:
-    - STORY ARC PLAN: [Insert the Story Planner Agent's output here]
-    - SETTING DETAILS: [Insert the Setting Builder Agent's output here]
-    - CHARACTER PROFILES: [Insert the Character Agent's output here]
-    - RELATIONSHIP DYNAMICS: [Insert the Relationship Architect Agent's output here]
-    - CHAPTER OUTLINES: [Insert the Outline Creator Agent's output here]
-    - ITEM PROFILES: [Insert the Item Developer Agent's output here]
-
-    Combine all this information into a single, cohesive document. Ensure the outline is well-structured, detailed, and follows a logical sequence.
     """,
     expected_output=f"A comprehensive and well-structured outline for the {num_chapters}-chapter story, integrating all elements including item profiles.",
     agent=outline_compiler,
@@ -362,17 +254,6 @@ def create_chapter_tasks(chapter_number, outline_context, context_window_size, g
 
             Chapter Outline:
             {chapter_outline}
-
-            Your specific instructions for this chapter are:
-            1. Write according to the detailed chapter outline, incorporating all Key Events, Character Developments, Setting, and Tone.
-            2. Maintain consistent character voices and personalities as defined by the Character Agent.
-            3. Vividly incorporate world-building details and settings as established by the Setting Builder.
-            4. Create engaging and immersive prose that captures the intended tone and style for the genre and chapter.
-            5. Ensure each chapter is a complete and satisfying scene with a clear beginning, middle, and end - do not leave scenes incomplete or abruptly cut off.
-            6. Ensure smooth and logical transitions between paragraphs and scenes within the chapter.
-            7. Add rich sensory details and descriptions of the environment and characters where appropriate to enhance immersion and engagement.
-
-        Always reference the chapter outline, previous chapter content (as summarized by the Memory Keeper), established world elements, and character developments to ensure consistency and coherence.
             """,
         expected_output=f"Chapter {chapter_number} written in engaging prose with proper paragraph formatting and a minimum of {min_words} words.",
         agent=writer,
@@ -409,6 +290,9 @@ def create_chapter_tasks(chapter_number, outline_context, context_window_size, g
     )
     logging.getLogger("Editor").info(f"Editor task for Chapter {chapter_number} assigned: {edit_task.description}")
     comm_logger.info(f"Agent Communication: Source=Writer, Task=Editing Chapter {chapter_number}, Target=Editor") # Communication Log - Editor
+
+    logger.debug(f"Debug: Chapter {chapter_number} - write_task: {write_task}") # ADDED DEBUG
+    logger.debug(f"Debug: Chapter {chapter_number} - write_task.tasks: {chapter_tasks}") # ADDED DEBUG
 
 
     return [research_task, write_task, critic_task, revise_task, edit_task]
@@ -480,6 +364,9 @@ for chapter_number in range(1, num_chapters + 1):
 
         # Access the output of the write_task directly from chapter_tasks
         write_task = chapter_tasks[1]  # write_task is the second task in the list
+        logger.debug(f"Debug: write_task.output: {write_task.output}") # ADDED DEBUG - check again in chapter loop
+        logger.debug(f"Debug: write_task.output.__dict__: {write_task.output.__dict__}") # ADDED DEBUG - inspect object
+
         if write_task.output:
             print(f"Debug: write_task.output: {write_task.output}")  # ADDED DEBUG PRINT
             chapter_content = write_task.output.output_value # NEW CORRECT LINE - ACCESSING output_value
