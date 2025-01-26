@@ -127,6 +127,61 @@ def create_agents(model_to_use, num_chapters, outline_context, genre_config):
         llm=model_to_use
     )
 
+    # Feedback Reviewer: Analyzes and synthesizes feedback
+    feedback_reviewer = Agent(
+        role='Feedback Reviewer',
+        goal=f"""
+        Analyze the feedback provided by the Critic and Editor for each chapter.
+        Identify the key areas for improvement and provide the Writer with a prioritized list of actionable feedback.
+        Focus on plot coherence, character development, pacing, and stylistic consistency.
+        Ensure the feedback is clear, specific, and directly references the relevant sections of the chapter.
+        Consider the outline: {outline_context}
+        """,
+        backstory="""
+        You are an expert in literary analysis and feedback consolidation.
+        You are capable of distilling diverse critiques into clear, actionable guidance for writers.
+        You are working on a {num_chapters}-chapter story in the {genre_config.get('GENRE')} genre.
+        """,
+        verbose=True,
+        llm=model_to_use
+    )
+
+    # Dialogue Specialist: Crafts and refines dialogue
+    dialogue_specialist = Agent(
+        role='Dialogue Specialist',
+        goal=f"""
+        Craft and refine dialogue for each chapter based on the provided outline and character profiles.
+        Ensure the dialogue is realistic, engaging, and reflects each character's personality, background, and emotional state.
+        Drive the narrative forward and incorporate subtext where appropriate.
+        Consider the outline: {outline_context}
+        """,
+        backstory=f"""
+        You are a seasoned playwright and screenwriter with a deep understanding of character dynamics and conversational nuances.
+        You are skilled at creating dialogue that is both realistic and dramatically effective.
+        You are working on a {num_chapters}-chapter story in the {genre_config.get('GENRE')} genre.
+        """,
+        verbose=True,
+        llm=model_to_use
+    )
+
+    # Setting Description Agent: Generates vivid setting descriptions
+    setting_description_agent = Agent(
+        role='Setting Description Agent',
+        goal=f"""
+        Generate vivid, detailed descriptions of settings and environments for each chapter.
+        Create immersive settings that enhance the mood, atmosphere, and thematic elements of the story.
+        Use sensory details and incorporate elements that reflect or contribute to the themes of the chapter.
+        Consider the outline: {outline_context}
+        """,
+        backstory=f"""
+        You are a renowned travel writer and nature observer with a keen eye for detail and a talent for evocative descriptions.
+        You are adept at creating immersive and thematically resonant settings.
+        You are working on a {num_chapters}-chapter story in the {genre_config.get('GENRE')} genre.
+        """,
+        verbose=True,
+        llm=model_to_use
+    )
+
     # Writer: Generates the actual prose for each chapter
     writer = Agent(
         role='Writer',
@@ -137,6 +192,7 @@ def create_agents(model_to_use, num_chapters, outline_context, genre_config):
         Each chapter MUST be at least {genre_config.get('MIN_WORDS_PER_CHAPTER', 1600)} and no more than {genre_config.get('MAX_WORDS_PER_CHAPTER', 3000)} words in length. Consider this a HARD REQUIREMENT. If your output is shorter, continue writing until you reach this minimum length.
         ONLY WRITE ONE CHAPTER AT A TIME.
         Consider the outline: {outline_context}
+        Incorporate creative twists with a frequency of {genre_config.get('CREATIVE_TWISTS_FREQUENCY')}, experiment with narrative voice as defined by {genre_config.get('NARRATIVE_VOICE_EXPERIMENTATION')}, and explore themes with a freedom level of {genre_config.get('THEMATIC_EXPLORATION_FREEDOM')}.
         """,
         backstory=f"""
         You are an expert creative writer who brings scenes to life with vivid prose, compelling characters, and engaging plots.
@@ -252,4 +308,8 @@ def create_agents(model_to_use, num_chapters, outline_context, genre_config):
         llm=model_to_use
     )
 
-    return [story_planner, outline_creator, setting_builder, character_agent, relationship_architect, plot_agent, writer, editor, memory_keeper, researcher, critic, reviser, outline_compiler]
+    return [
+        story_planner, outline_creator, setting_builder, character_agent, relationship_architect,
+        plot_agent, writer, editor, memory_keeper, researcher, critic, reviser, outline_compiler,
+        feedback_reviewer, dialogue_specialist, setting_description_agent
+    ]
