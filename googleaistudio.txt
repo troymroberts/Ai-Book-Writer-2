@@ -23,6 +23,18 @@ To develop an AI-agentic system capable of writing a full-length novel, leveragi
 
 ## Changelog: (New entries go here)
 
+2025-01-27 10:30 - Added debug logging for context tasks in `create_chapter_tasks` (Action 1.3)
+    - **Code Changes:**
+        *   Modified `main.py` in `create_chapter_tasks` function to include debug print statements for `research_task.output` and `outline_creator_task.output` before `write_task` definition.
+    - **Reasoning/Rationale:**
+        *   To debug `AttributeError: 'TaskOutput' object has no attribute 'output_value'` by checking if context tasks (`research_task`, `outline_creator_task`) are producing outputs for `write_task` to use.
+    - **Insights/Observations:**
+        *   If context tasks have `None` outputs, it indicates a problem earlier in the chapter task sequence, preventing `write_task` from executing correctly.
+    - **Next Steps/Action Items:**
+        *   Rerun `main.py` with these changes and provide new logs (`book_writer.log.txt` and console output).
+        *   Analyze logs to check the outputs of `research_task` and `outline_creator_task`.
+
+
 2025-01-27 10:00 - Added debug logging to `create_chapter_tasks` in `main.py` (Action 1.1)
     - **Code Changes:**
         *   Modified `main.py` in `create_chapter_tasks` function to include debug print statements for `write_task` and `write_task.output`.
