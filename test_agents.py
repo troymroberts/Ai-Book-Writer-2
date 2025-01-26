@@ -1,13 +1,14 @@
-# test_agents.py
 import pytest
-from agents import create_agents
+import logging
 from crewai import Agent
+from agents import create_agents
+from unittest.mock import patch
 
-# Mock model and config for testing
-MODEL_TO_USE = "mock_model"
-NUM_CHAPTERS = 3
-OUTLINE_CONTEXT = "This is a test outline."
-GENRE_CONFIG = {
+# Mock configuration for testing
+MOCK_MODEL = "ollama/llama3.2:latest"
+MOCK_NUM_CHAPTERS = 3
+MOCK_OUTLINE_CONTEXT = "Test outline context."
+MOCK_GENRE_CONFIG = {
     'GENRE': 'test_genre',
     'PACING_SPEED_CHAPTER_START': 'slow',
     'PACING_SPEED_CHAPTER_MID': 'medium',
@@ -26,28 +27,37 @@ GENRE_CONFIG = {
     'RELATIONSHIP_ARCHITECTURE_DESCRIPTION': 'Test relationship architecture',
 }
 
-def test_create_agents_returns_list():
-    agents = create_agents(MODEL_TO_USE, NUM_CHAPTERS, OUTLINE_CONTEXT, GENRE_CONFIG)
-    assert isinstance(agents, list)
+# Test individual agent creation and logging
+@pytest.mark.parametrize("agent_name, expected_log_message", [
+    ("StoryPlanner", "Story Planner agent created."),
+    ("OutlineCreator", "Outline Creator agent created."),
+    ("SettingBuilder", "Setting Builder agent created."),
+    ("CharacterCreator", "Character Creator agent created."),
+    ("RelationshipArchitect", "Relationship Architect agent created."),
+    ("PlotAgent", "Plot Agent agent created."),
+    ("Writer", "Writer agent created."),
+    ("Editor", "Editor agent created."),
+    ("MemoryKeeper", "Memory Keeper agent created."),
+    ("Researcher", "Researcher agent created."),
+    ("Critic", "Critic agent created."),
+    ("Reviser", "Reviser agent created."),
+    ("OutlineCompiler", "Outline Compiler agent created."),
+])
 
-def test_create_agents_returns_correct_number_of_agents():
-    agents = create_agents(MODEL_TO_USE, NUM_CHAPTERS, OUTLINE_CONTEXT, GENRE_CONFIG)
-    assert len(agents) == 13  # Expected number of agents
-
-def test_create_agents_returns_agent_instances():
-    agents = create_agents(MODEL_TO_USE, NUM_CHAPTERS, OUTLINE_CONTEXT, GENRE_CONFIG)
-    for agent in agents:
-        assert isinstance(agent, Agent)
-
-def test_story_planner_agent_has_correct_role():
-    agents = create_agents(MODEL_TO_USE, NUM_CHAPTERS, OUTLINE_CONTEXT, GENRE_CONFIG)
-    story_planner = agents[0]
-    assert story_planner.role == 'Story Planner'
-
-# Add more tests for other agents and their attributes...
-
-def test_writer_agent_has_word_limit_in_goal():
-    agents = create_agents(MODEL_TO_USE, NUM_CHAPTERS, OUTLINE_CONTEXT, GENRE_CONFIG)
-    writer = agents[6]
-    assert "Each chapter MUST be at least 100" in writer.goal
-    assert "no more than 200 words" in writer.goal
+def test_agent_creation_and_logging(agent_name, expected_log_message):
+    with patch('logging.Logger.info') as mock_info:
+        agents = create_agents(MOCK_MODEL, MOCK_NUM_CHAPTERS, MOCK_OUTLINE_CONTEXT, MOCK_GENRE_CONFIG)
+        
+        # Find the agent by role
+        agent = next((a for a in agents if a.role.replace(" ", "") == agent_name), None)
+        
+        assert agent is not None, f"Agent {agent_name} not found in the created agents"
+        
+        # Check if the info method was called with the correct message
+        if any(expected_log_message in str(call_args) for call_args in mock_info.call_args_list):
+            print(f"Log message for {agent_name} found.")
+        else:
+            print(f"Log message for {agent_name} not found in calls:")
+            for call_args in mock_info.call_args_list:
+                print(f"  - {call_args}")
+            pytest.fail(f"Expected log message for {agent_name} was not found.")

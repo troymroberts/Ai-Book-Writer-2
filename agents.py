@@ -1,22 +1,34 @@
-# agents.py
 from crewai import Agent
+import logging
+
+# Configure logging for agents.py
+logging.basicConfig(
+    filename='book_writer.log',
+    filemode='a',  # Append to the log file
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.DEBUG
+)
+
+# Helper function to create agents with loggers (now outside create_agents)
+def create_agent_with_logger(role, goal, backstory, verbose, model_to_use, **kwargs):
+    logger = logging.getLogger(role)
+    logger.info(f"{role} agent created.")
+    return Agent(
+        role=role,
+        goal=goal,
+        backstory=backstory,
+        verbose=verbose,
+        llm=model_to_use,
+        **kwargs
+    )
 
 def create_agents(model_to_use, num_chapters, outline_context, genre_config):
     """
     Creates and returns a list of agent instances for the book writing project.
-
-    Args:
-        model_to_use (str): The model identifier to be used by the agents.
-        num_chapters (int): The number of chapters in the story.
-        outline_context (str): The context of the book outline.
-        genre_config (dict): Configuration parameters for the selected genre.
-
-    Returns:
-        list: A list of Agent instances.
     """
 
     # Story Planner: Focuses on high-level story structure
-    story_planner = Agent(
+    story_planner = create_agent_with_logger(
         role='Story Planner',
         goal=f"""
         Refine the high-level story arc for a {num_chapters}-chapter story, ensuring effective pacing and a compelling structure.
@@ -30,11 +42,11 @@ def create_agents(model_to_use, num_chapters, outline_context, genre_config):
         You are working on a {num_chapters}-chapter story in the {genre_config.get('GENRE')} genre.
         """,
         verbose=True,
-        llm=model_to_use
+        model_to_use=model_to_use
     )
 
     # Outline Creator: Creates detailed chapter outlines
-    outline_creator = Agent(
+    outline_creator = create_agent_with_logger(
         role='Outline Creator',
         goal=f"""
         Generate detailed chapter outlines based on the story arc plan for a {num_chapters}-chapter story.
@@ -50,11 +62,11 @@ def create_agents(model_to_use, num_chapters, outline_context, genre_config):
         You create outlines for ONE CHAPTER AT A TIME.
         """,
         verbose=True,
-        llm=model_to_use
+        model_to_use=model_to_use
     )
 
     # Setting Builder: Creates and maintains the story setting
-    setting_builder = Agent(
+    setting_builder = create_agent_with_logger(
         role='Setting Builder',
         goal=f"""
         Establish and maintain all settings and world elements needed for the {num_chapters}-chapter story, ensuring they are rich, consistent, and dynamically integrated as the story progresses.
@@ -67,11 +79,11 @@ def create_agents(model_to_use, num_chapters, outline_context, genre_config):
         You are working on a {num_chapters}-chapter story in the {genre_config.get('GENRE')} genre.
         """,
         verbose=True,
-        llm=model_to_use
+        model_to_use=model_to_use
     )
 
     # Character Agent: Develops and maintains character details
-    character_agent = Agent(
+    character_agent = create_agent_with_logger(
         role='Character Creator',
         goal=f"""
         Develop and maintain consistent, engaging, and evolving characters throughout the {num_chapters}-chapter book.
@@ -88,11 +100,11 @@ def create_agents(model_to_use, num_chapters, outline_context, genre_config):
         You are working on a {num_chapters}-chapter story in the {genre_config.get('GENRE')} genre.
         """,
         verbose=True,
-        llm=model_to_use
+        model_to_use=model_to_use
     )
 
     # Relationship Architect: Manages relationships and family structures
-    relationship_architect = Agent(
+    relationship_architect = create_agent_with_logger(
         role='Relationship Architect',
         goal=f"""
         Develop and manage the relationships between characters, including family structures, friendships, rivalries, and romantic relationships.
@@ -107,11 +119,11 @@ def create_agents(model_to_use, num_chapters, outline_context, genre_config):
         You are working on a {num_chapters}-chapter story in the {genre_config.get('GENRE')} genre.
         """,
         verbose=True,
-        llm=model_to_use
+        model_to_use=model_to_use
     )
 
     # Plot Agent: Focuses on plot details and pacing within chapters
-    plot_agent = Agent(
+    plot_agent = create_agent_with_logger(
         role='Plot Agent',
         goal=f"""
         Refine chapter outlines to maximize plot effectiveness and pacing at the chapter level for a {num_chapters}-chapter story, ensuring each chapter's plot is engaging, well-paced, and contributes to the overall story arc.
@@ -124,33 +136,34 @@ def create_agents(model_to_use, num_chapters, outline_context, genre_config):
         You are working on a {num_chapters}-chapter story in the {genre_config.get('GENRE')} genre.
         """,
         verbose=True,
-        llm=model_to_use
+        model_to_use=model_to_use
     )
 
     # Writer: Generates the actual prose for each chapter
-    writer = Agent(
+    writer = create_agent_with_logger(
         role='Writer',
         goal=f"""
-        Write individual chapters based on the provided outline for a {num_chapters}-chapter story, expanding on the key events, character developments, and setting descriptions with vivid prose and engaging dialogue.
+        Write individual chapters based on the provided chapter outline for a {num_chapters}-chapter story, expanding on the key events, character developments, and setting descriptions with vivid prose and engaging dialogue.
         Pay close attention to the character profiles, including their stats and speech patterns, to create realistic and consistent dialogue and interactions.
         Adhere to the specified tone and style for each chapter, and follow the genre-specific instructions.
-        Each chapter MUST be at least {genre_config.get('MIN_WORDS_PER_CHAPTER', 1600)} and no more than {genre_config.get('MAX_WORDS_PER_CHAPTER', 3000)} words in length. Consider this a HARD REQUIREMENT. If your output is shorter, continue writing until you reach this minimum length.
+        Each chapter MUST be at least {genre_config.get('MIN_WORDS_PER_CHAPTER', 1600)} words in length. Consider this a HARD REQUIREMENT. If your output is shorter, continue writing until you reach this minimum length.
         ONLY WRITE ONE CHAPTER AT A TIME.
-        Consider the outline: {outline_context}
+        Refer to the provided chapter outline for the content and structure of each chapter.
         """,
         backstory=f"""
         You are an expert creative writer who brings scenes to life with vivid prose, compelling characters, and engaging plots.
         You write according to the detailed chapter outline, incorporating all Key Events, Character Developments, Setting, and Tone, while maintaining consistent character voices and personalities.
         You use the character stats and speech patterns defined by the Character Agent to guide your writing.
-        You are working on a {num_chapters}-chapter story in the {genre_config.get('GENRE')} genre, ONE CHAPTER AT A TIME, with each chapter being at least {genre_config.get('MIN_WORDS_PER_CHAPTER', 1600)} and no more than {genre_config.get('MAX_WORDS_PER_CHAPTER', 3000)} words long.
+        You are working on a {num_chapters}-chapter story in the {genre_config.get('GENRE')} genre, ONE CHAPTER AT A TIME, with each chapter being at least {genre_config.get('MIN_WORDS_PER_CHAPTER', 1600)} words long.
         You are committed to meeting the word count for each chapter and will not stop writing until this requirement is met.
+        You will be provided with the specific outline for each chapter and you must adhere to it.
         """,
         verbose=True,
-        llm=model_to_use
+        model_to_use=model_to_use
     )
 
     # Editor: Reviews and improves content
-    editor = Agent(
+    editor = create_agent_with_logger(
         role='Editor',
         goal=f"""
         Review and refine each chapter, providing feedback to the writer if necessary for a {num_chapters}-chapter story.
@@ -167,11 +180,11 @@ def create_agents(model_to_use, num_chapters, outline_context, genre_config):
         You are working on a {num_chapters}-chapter story in the {genre_config.get('GENRE')} genre, ONE CHAPTER AT A TIME.
         """,
         verbose=True,
-        llm=model_to_use
+        model_to_use=model_to_use
     )
 
     # Memory Keeper: Maintains story continuity and context
-    memory_keeper = Agent(
+    memory_keeper = create_agent_with_logger(
         role='Memory Keeper',
         goal=f"""
         Track and summarize each chapter's key events, character developments, and world details for a {num_chapters}-chapter story.
@@ -184,11 +197,11 @@ def create_agents(model_to_use, num_chapters, outline_context, genre_config):
         You are working on a {num_chapters}-chapter story.
         """,
         verbose=True,
-        llm=model_to_use
+        model_to_use=model_to_use
     )
 
     # Researcher: Conducts research to provide supporting details
-    researcher = Agent(
+    researcher = create_agent_with_logger(
         role='Researcher',
         goal=f"""
         Research specific information, gather relevant data, and provide accurate details to support the {num_chapters}-chapter story, such as historical context, cultural details, or technical information.
@@ -200,11 +213,11 @@ def create_agents(model_to_use, num_chapters, outline_context, genre_config):
         You are working on a {num_chapters}-chapter story.
         """,
         verbose=True,
-        llm=model_to_use
+        model_to_use=model_to_use
     )
 
     # Critic: Provides constructive criticism of each chapter
-    critic = Agent(
+    critic = create_agent_with_logger(
         role='Critic',
         goal=f"""
         Provide constructive criticism of each chapter, identifying plot holes, inconsistencies, and areas for improvement in terms of narrative structure, character development, and pacing for a {num_chapters}-chapter story.
@@ -216,11 +229,11 @@ def create_agents(model_to_use, num_chapters, outline_context, genre_config):
         You are working on a {num_chapters}-chapter story.
         """,
         verbose=True,
-        llm=model_to_use
+        model_to_use=model_to_use
     )
 
     # Reviser: Revises each chapter based on feedback
-    reviser = Agent(
+    reviser = create_agent_with_logger(
         role='Reviser',
         goal=f"""
         Revise each chapter based on feedback from the Critic and Editor, ensuring the chapter is coherent, consistent, and polished for a {num_chapters}-chapter story.
@@ -233,11 +246,11 @@ def create_agents(model_to_use, num_chapters, outline_context, genre_config):
         You are working on a {num_chapters}-chapter story.
         """,
         verbose=True,
-        llm=model_to_use
+        model_to_use=model_to_use
     )
 
     # Outline Compiler: Compiles the final outline
-    outline_compiler = Agent(
+    outline_compiler = create_agent_with_logger(
         role='Outline Compiler',
         goal=f"""
         Compile the complete book outline, integrating the overall story arc plan, setting details, character profiles, relationship dynamics, and individual chapter outlines into a single, cohesive document.
@@ -249,7 +262,7 @@ def create_agents(model_to_use, num_chapters, outline_context, genre_config):
         You ensure the outline is comprehensive, well-organized, and ready for use by the writing team.
         """,
         verbose=True,
-        llm=model_to_use
+        model_to_use=model_to_use
     )
 
     return [story_planner, outline_creator, setting_builder, character_agent, relationship_architect, plot_agent, writer, editor, memory_keeper, researcher, critic, reviser, outline_compiler]
