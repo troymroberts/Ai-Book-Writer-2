@@ -170,17 +170,24 @@ def parse_outline(outline_text):
         scene_match = scene_pattern.match(line)
 
         if chapter_match:
-            # If there's a current scene, add it to the last chapter before starting a new one
+            # If there's a current scene, add it to the last chapter
             if current_scene and current_chapter:
                 current_chapter['scenes'].append(current_scene)
-                current_scene = None
+
+            # If there's a current chapter, add it to the list of chapters
+            if current_chapter:
+                chapters.append(current_chapter)
 
             # Start a new chapter
             chapter_number = chapter_match.group(1)
             chapter_title = chapter_match.group(2)
             current_chapter = {'title': f"Chapter {chapter_number}: {chapter_title}", 'scenes': []}
-            chapters.append(current_chapter)
+            current_scene = None  # Reset the current scene when starting a new chapter
         elif scene_match:
+            # If there's a current scene, add it to the current chapter
+            if current_scene and current_chapter:
+                current_chapter['scenes'].append(current_scene)
+
             # Start a new scene
             scene_number = scene_match.group(1)
             scene_title = scene_match.group(2)
@@ -194,6 +201,10 @@ def parse_outline(outline_text):
     if current_scene and current_chapter:
         current_chapter['scenes'].append(current_scene)
 
+    # Add the last chapter to the list of chapters if it exists
+    if current_chapter:
+        chapters.append(current_chapter)
+
     return chapters
 
 # Check if outline_compiler_task.output exists and has .output_value
@@ -202,55 +213,41 @@ if outline_compiler_task.output and hasattr(outline_compiler_task.output, 'outpu
     print(f"\nOutline Compiler Output:\n{outline_text}")
 
     # Parse the outline text and populate outline_data
-    outline_data = [{'title': 'Part 1', 'isPart': True, 'chapters': parse_outline(outline_text)}]
+    outline_data = parse_outline(outline_text)
 else:
     outline_text = ""
     outline_data = []
     print(f"\nOutline Compiler Output:\nTask did not produce output or has no .output_value attribute.")
 
-# Create unique IDs using create_id
-chapterId = create_id(novel.chapters)
-sceneId = create_id(novel.scenes)
+# Initialize counters for chapter and scene IDs
+chapter_id_counter = 1
+scene_id_counter = 1
 
-part_counter = 1  # To keep track of parts
-for part_data in outline_data:
-    if part_data['isPart']:
-        # Create a new "Part" (which is a Chapter with chLevel 1 in yw7)
-        part = Chapter()
-        part.title = part_data['title']
-        part.chLevel = 1  # Indicates a Part
-        part.chType = 0 # 0 = normal
-        novel.chapters[chapterId] = part
-        novel.srtChapters.append(chapterId)
-        chapterId = create_id(novel.chapters)
-        part_counter += 1
+for chapter_data in outline_data:
+    # Create a new chapter
+    chapter = Chapter()
+    chapter.title = chapter_data['title']
+    chapter.chType = 0 # 0 = normal
+    chapter.chLevel = 0 # 0 = normal
+    chapter.chId = str(chapter_id_counter)
+    novel.chapters[chapter.chId] = chapter
+    novel.srtChapters.append(chapter.chId)
+    chapter_id_counter += 1
 
-    for chapter_data in part_data['chapters']:
-        # Create a new chapter
-        chapter = Chapter()
-        chapter.title = chapter_data['title']
-        chapter.chType = 0 # 0 = normal
-        chapter.chLevel = 0 # 0 = normal
-        novel.chapters[chapterId] = chapter
-        novel.srtChapters.append(chapterId)
+    for scene_data in chapter_data['scenes']:
+        # Create a new scene
+        scene = Scene()
+        scene.title = scene_data['title']
+        scene.desc = scene_data['desc']
+        scene.status = 1 # 1 = Outline
+        scene.scType = 0 # 0 = Normal
+        scene.scId = str(scene_id_counter)
+        scene.sceneContent = '' # No scene content added
+        novel.scenes[scene.scId] = scene
 
-        for scene_data in chapter_data['scenes']:
-            # Create a new scene
-            scene = Scene()
-            scene.title = scene_data['title']
-            scene.desc = scene_data['desc']
-            scene.status = 1 # 1 = Outline
-            scene.scType = 0 # 0 = Normal
-            scene.sceneContent = '' # No scene content added
-
-            # Add the scene to the novel
-            novel.scenes[sceneId] = scene
-
-            # Associate the scene with the current chapter
-            novel.chapters[chapterId].srtScenes.append(sceneId)
-            sceneId = create_id(novel.scenes)
-
-        chapterId = create_id(novel.chapters)
+        # Associate the scene with the current chapter
+        chapter.srtScenes.append(scene.scId)
+        scene_id_counter += 1
 
 # Create the output folder if it doesn't exist
 output_folder = "book-output"
