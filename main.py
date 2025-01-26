@@ -376,7 +376,7 @@ def create_chapter_tasks(chapter_number, outline_context, context_window_size, g
         agent=reviser,
         context=[outline_creator_task, write_task]
     )
-    logging.getLogger("Reviser").info(f"Revise task for Chapter {chapter_number} assigned: {revise_task.description}")
+    logging.getLogger("Reviser").info(f"Reviser task for Chapter {chapter_number} assigned: {revise_task.description}")
 
     edit_task = Task(
         description=f"""Edit Chapter {chapter_number}, focusing on grammar, style, and overall flow. Incorporate changes directly into the chapter text.
@@ -459,8 +459,7 @@ for chapter_number in range(1, num_chapters + 1):
         write_task = chapter_tasks[1]  # write_task is the second task in the list
         if write_task.output:
             print(f"Debug: write_task.output: {write_task.output}")  # ADDED DEBUG PRINT
-            # chapter_content = write_task.output.result # OLD INCORRECT LINE
-            chapter_content = write_task.output # NEW CORRECT LINE - ASSUMING output_value is directly accessible
+            chapter_content = write_task.output.output_value # NEW CORRECT LINE - ACCESSING output_value
             chapter_outputs.append(chapter_content)  # Store the output
             logger.info(f"Successfully generated content for Chapter {chapter_number}")
             logger.debug(f"Raw chapter content: {chapter_content}")
