@@ -15,6 +15,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger("Main")
 
+# Configure logging for agent communications - NEW LOGGER
+comm_logger = logging.getLogger("AgentCommunicationLogger")
+comm_logger.setLevel(logging.INFO)
+comm_handler = logging.FileHandler('agent_communication.log', mode='a') # Separate log file
+comm_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+comm_handler.setFormatter(comm_formatter)
+comm_logger.addHandler(comm_handler)
+
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -84,6 +93,7 @@ story_planning_task = Task(
     agent=story_planner
 )
 logging.getLogger("StoryPlanner").info(f"Story planning task assigned: {story_planning_task.description}")
+comm_logger.info(f"Agent Communication: Source=Main, Task=Story Planning, Target=StoryPlanner") # Communication Log - Story Planner
 
 # Define the task for the Setting Builder agent
 setting_building_task = Task(
@@ -110,6 +120,7 @@ setting_building_task = Task(
     agent=setting_builder
 )
 logging.getLogger("SettingBuilder").info(f"Setting building task assigned: {setting_building_task.description}")
+comm_logger.info(f"Agent Communication: Source=Main, Task=Setting Building, Target=SettingBuilder") # Communication Log - Setting Builder
 
 # Define the task for the Character Agent
 character_development_task = Task(
@@ -143,6 +154,7 @@ character_development_task = Task(
     agent=character_agent
 )
 logging.getLogger("CharacterCreator").info(f"Character development task assigned: {character_development_task.description}")
+comm_logger.info(f"Agent Communication: Source=Main, Task=Character Development, Target=CharacterCreator") # Communication Log - Character Creator
 
 # Define the task for the Relationship Architect agent
 relationship_architecture_task = Task(
@@ -170,6 +182,7 @@ relationship_architecture_task = Task(
     context=[character_development_task]  # Ensure access to character details
 )
 logging.getLogger("RelationshipArchitect").info(f"Relationship architecture task assigned: {relationship_architecture_task.description}")
+comm_logger.info(f"Agent Communication: Source=Main, Task=Relationship Architecture, Target=RelationshipArchitect") # Communication Log - Relationship Architect
 
 # Define the task for the Item Developer agent
 item_development_task = Task(
@@ -191,6 +204,7 @@ item_development_task = Task(
     agent=item_developer
 )
 logging.getLogger("ItemDeveloper").info(f"Item development task assigned: {item_development_task.description}")
+comm_logger.info(f"Agent Communication: Source=Main, Task=Item Development, Target=ItemDeveloper") # Communication Log - Item Developer
 
 
 # Define the task for the Outline Creator agent
@@ -232,6 +246,7 @@ outline_creator_task = Task(
     context=[story_planning_task, character_development_task, setting_building_task, relationship_architecture_task, item_development_task]
 )
 logging.getLogger("OutlineCreator").info(f"Outline creator task assigned: {outline_creator_task.description}")
+comm_logger.info(f"Agent Communication: Source=Main, Task=Outline Creation, Target=OutlineCreator") # Communication Log - Outline Creator
 
 # Define the task for the Outline Compiler agent
 outline_compiler_task = Task(
@@ -260,6 +275,8 @@ outline_compiler_task = Task(
     context=[story_planning_task, setting_building_task, character_development_task, relationship_architecture_task, outline_creator_task, item_development_task]
 )
 logging.getLogger("OutlineCompiler").info(f"Outline compiler task assigned: {outline_compiler_task.description}")
+comm_logger.info(f"Agent Communication: Source=Main, Task=Outline Compilation, Target=OutlineCompiler") # Communication Log - Outline Compiler
+
 
 # Create a Crew and assign the task
 outline_crew = Crew(
@@ -321,6 +338,7 @@ def create_chapter_tasks(chapter_number, outline_context, context_window_size, g
         agent=researcher
     )
     logging.getLogger("Researcher").info(f"Research task for Chapter {chapter_number} assigned: {research_task.description}")
+    comm_logger.info(f"Agent Communication: Source=Main, Task=Research Chapter {chapter_number}, Target=Researcher") # Communication Log - Researcher
 
     # Extract the relevant part of the outline for this chapter
     chapter_outline = ""
@@ -361,6 +379,7 @@ def create_chapter_tasks(chapter_number, outline_context, context_window_size, g
         context=[research_task, outline_creator_task]
     )
     logging.getLogger("Writer").info(f"Write task for Chapter {chapter_number} assigned: {write_task.description}")
+    comm_logger.info(f"Agent Communication: Source=Main, Task=Writing Chapter {chapter_number}, Target=Writer") # Communication Log - Writer
 
     critic_task = Task(
         description=f"""Provide a critical review of Chapter {chapter_number}, identifying any plot holes, inconsistencies, or areas that need improvement. Refer to the outline for context: {outline_context}""",
@@ -369,14 +388,16 @@ def create_chapter_tasks(chapter_number, outline_context, context_window_size, g
         context=[outline_creator_task, write_task]
     )
     logging.getLogger("Critic").info(f"Critic task for Chapter {chapter_number} assigned: {critic_task.description}")
+    comm_logger.info(f"Agent Communication: Source=Writer, Task=Critic Review Chapter {chapter_number}, Target=Critic") # Communication Log - Critic
 
     revise_task = Task(
         description=f"""Revise Chapter {chapter_number} based on feedback from the Critic and Editor. Ensure the chapter is coherent, consistent, and polished. Refer to the outline for context: {outline_context}""",
         expected_output=f"A revised version of Chapter {chapter_number} that incorporates feedback and improvements.",
         agent=reviser,
-        context=[outline_creator_task, write_task]
+        context=[outline_creator_task, write_task, critic_task]
     )
     logging.getLogger("Reviser").info(f"Revise task for Chapter {chapter_number} assigned: {revise_task.description}")
+    comm_logger.info(f"Agent Communication: Source=Critic/Editor, Task=Revision Chapter {chapter_number}, Target=Reviser") # Communication Log - Reviser
 
     edit_task = Task(
         description=f"""Edit Chapter {chapter_number}, focusing on grammar, style, and overall flow. Incorporate changes directly into the chapter text.
@@ -386,7 +407,9 @@ def create_chapter_tasks(chapter_number, outline_context, context_window_size, g
         agent=editor,
         context=[outline_creator_task, write_task]
     )
-    logging.getLogger("Editor").info(f"Edit task for Chapter {chapter_number} assigned: {edit_task.description}")
+    logging.getLogger("Editor").info(f"Editor task for Chapter {chapter_number} assigned: {edit_task.description}")
+    comm_logger.info(f"Agent Communication: Source=Writer, Task=Editing Chapter {chapter_number}, Target=Editor") # Communication Log - Editor
+
 
     return [research_task, write_task, critic_task, revise_task, edit_task]
 
