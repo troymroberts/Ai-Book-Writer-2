@@ -287,7 +287,6 @@ except Exception as e:
 # Initialize outline_context even if outline_text is empty
 outline_context = outline_text
 
-
 # Create the book-output subfolder if it doesn't exist
 output_folder = "book-output"
 os.makedirs(output_folder, exist_ok=True)
@@ -459,7 +458,9 @@ for chapter_number in range(1, num_chapters + 1):
         # Access the output of the write_task directly from chapter_tasks
         write_task = chapter_tasks[1]  # write_task is the second task in the list
         if write_task.output:
-            chapter_content = write_task.output.result
+            print(f"Debug: write_task.output: {write_task.output}")  # ADDED DEBUG PRINT
+            # chapter_content = write_task.output.result # OLD INCORRECT LINE
+            chapter_content = write_task.output # NEW CORRECT LINE - ASSUMING output_value is directly accessible
             chapter_outputs.append(chapter_content)  # Store the output
             logger.info(f"Successfully generated content for Chapter {chapter_number}")
             logger.debug(f"Raw chapter content: {chapter_content}")
