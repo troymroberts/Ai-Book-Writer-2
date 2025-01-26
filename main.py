@@ -284,6 +284,10 @@ except Exception as e:
     logger.exception("An error occurred during outline generation.")
     outline_text = ""
 
+# Initialize outline_context even if outline_text is empty
+outline_context = outline_text
+
+
 # Create the book-output subfolder if it doesn't exist
 output_folder = "book-output"
 os.makedirs(output_folder, exist_ok=True)
