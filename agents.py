@@ -13,7 +13,21 @@ logging.basicConfig(
 def create_agent_with_logger(role, goal, backstory, verbose, model_to_use, **kwargs):
     logger = logging.getLogger(role)
     logger.info(f"{role} agent created.")
-    return Agent(
+
+    # NEW: Log the prompt before making the LLM call
+    tools = kwargs.get('tools', [])
+    agent_prompt = Agent(
+        role=role,
+        goal=goal,
+        backstory=backstory,
+        verbose=verbose,
+        llm=model_to_use,
+        tools=tools  # Pass tools here as well
+    )._prepare_llm_message()  # Get the prepared message list
+
+    logger.debug(f"{role} Agent Prompt:\n{agent_prompt}")  # Log the prompt
+
+    return Agent(  # Agent creation remains the same
         role=role,
         goal=goal,
         backstory=backstory,
@@ -226,11 +240,13 @@ def create_agents(model_to_use, num_chapters, outline_context, genre_config):
         role='Critic',
         goal=f"""
         Provide constructive criticism of each chapter, identifying plot holes, inconsistencies, and areas for improvement in terms of narrative structure, character development, and pacing for a {num_chapters}-chapter story.
+        Additionally, evaluate the scene order within each chapter and suggest improvements to scene order for better pacing, tension, and flow.
         Consider the outline: {outline_context}
         """,
         backstory=f"""
         You are a discerning critic, able to analyze stories and offer insightful feedback for enhancement.
         You provide a critical review of each chapter, identifying any plot holes, inconsistencies, or areas that need improvement.
+        You are also skilled at analyzing scene order within chapters and suggesting reorderings to enhance narrative impact.
         You are working on a {num_chapters}-chapter story.
         """,
         verbose=True,
@@ -243,10 +259,12 @@ def create_agents(model_to_use, num_chapters, outline_context, genre_config):
         goal=f"""
         Revise each chapter based on feedback from the Critic and Editor, ensuring the chapter is coherent, consistent, and polished for a {num_chapters}-chapter story.
         Incorporate revisions to improve the story's quality and readability.
+        Incorporate any suggested scene reordering from the Critic. If scenes are reordered, rewrite scene transitions to ensure smooth flow and coherence.
         Consider the outline: {outline_context}
         """,
         backstory=f"""
         You are a skilled reviser, capable of incorporating feedback and polishing each chapter to perfection.
+        You revise the story based on feedback, ensuring the story is coherent, consistent, and polished.
         You revise the story based on feedback, ensuring the story is coherent, consistent, and polished.
         You are working on a {num_chapters}-chapter story.
         """,
@@ -288,6 +306,5 @@ def create_agents(model_to_use, num_chapters, outline_context, genre_config):
         verbose=True,
         model_to_use=model_to_use
     )
-
 
     return [story_planner, outline_creator, setting_builder, character_agent, relationship_architect, plot_agent, writer, editor, memory_keeper, researcher, critic, reviser, outline_compiler, item_developer]

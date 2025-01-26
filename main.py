@@ -396,7 +396,7 @@ def create_chapter_tasks(chapter_number, outline_context, context_window_size, g
         agent=reviser,
         context=[outline_creator_task, write_task, critic_task]
     )
-    logging.getLogger("Reviser").info(f"Revise task for Chapter {chapter_number} assigned: {revise_task.description}")
+    logging.getLogger("Reviser").info(f"Reviser task for Chapter {chapter_number} assigned: {revise_task.description}")
     comm_logger.info(f"Agent Communication: Source=Critic/Editor, Task=Revision Chapter {chapter_number}, Target=Reviser") # Communication Log - Reviser
 
     edit_task = Task(
