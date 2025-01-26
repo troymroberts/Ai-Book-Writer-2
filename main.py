@@ -49,7 +49,7 @@ logger.info(f"Number of chapters: {num_chapters}")
 agents = create_agents(model_to_use, num_chapters, "", genre_config)
 
 # Assign agents to variables
-story_planner, outline_creator, setting_builder, character_agent, relationship_architect, plot_agent, writer, editor, memory_keeper, researcher, critic, reviser, outline_compiler = agents
+story_planner, outline_creator, setting_builder, character_agent, relationship_architect, plot_agent, writer, editor, memory_keeper, researcher, critic, reviser, outline_compiler, item_developer = agents
 
 # Get the initial prompt from the .env file
 initial_prompt = os.getenv('INITIAL_PROMPT', "A group of friends decides to spend a memorable day at the beach. Each friend has a different idea of what makes a perfect beach day, leading to a series of adventures and misadventures as they try to make the most of their time together.")
@@ -171,10 +171,32 @@ relationship_architecture_task = Task(
 )
 logging.getLogger("RelationshipArchitect").info(f"Relationship architecture task assigned: {relationship_architecture_task.description}")
 
+# Define the task for the Item Developer agent
+item_development_task = Task(
+    description=f"""{genre_config.get('ITEM_DEVELOPMENT_DESCRIPTION', "Develop detailed item profiles for all significant items in the story.")}
+    Create items that are relevant to the plot and world-building of the {num_chapters} chapter story.
+
+    Format your response as:
+    ITEM_PROFILES:
+
+    [ITEM NAME]
+    - Description: [Detailed description of the item, including its physical appearance, history, and any special properties]
+    - Purpose in Story: [How the item is used in the plot and its significance to the characters or events]
+    - Symbolic Meaning (if any): [Any symbolic or thematic resonance the item carries]
+    - Chapters/Scenes of Appearance: [List of chapters and scenes where the item appears or is relevant]
+
+    Ensure each item is well-defined and its role in the story is clear.
+    """,
+    expected_output="Detailed item profiles with descriptions, purpose, symbolic meaning, and chapters/scenes of appearance.",
+    agent=item_developer
+)
+logging.getLogger("ItemDeveloper").info(f"Item development task assigned: {item_development_task.description}")
+
+
 # Define the task for the Outline Creator agent
 outline_creator_task = Task(
     description=f"""
-    Create a detailed chapter outline for each of the {num_chapters} chapters individually, based on the following premise, the developed story arc plan, character profiles, relationship dynamics, and setting details:
+    Create a detailed chapter outline for each of the {num_chapters} chapters individually, based on the following premise, the developed story arc plan, character profiles, relationship dynamics, setting details, and item profiles:
 
     Initial Premise: {initial_prompt}
 
@@ -185,6 +207,8 @@ outline_creator_task = Task(
     Relationship Dynamics: [Provided by the Relationship Architect Agent]
 
     Setting Details: [Provided by the Setting Builder Agent]
+
+    Item Profiles: [Provided by the Item Developer Agent]
 
     Follow this EXACT format for each chapter:
 
@@ -197,6 +221,7 @@ outline_creator_task = Task(
     Character Developments: [Specific character moments and changes in this chapter]
     Setting: [Specific location and atmosphere for this chapter]
     Tone: [Specific emotional and narrative tone for this chapter]
+    Items: [List any important items that feature prominently in this chapter]
 
     Repeat EXACTLY this format for all {num_chapters} chapters.
 
@@ -204,7 +229,7 @@ outline_creator_task = Task(
     """,
     expected_output=f"A detailed chapter outline for each of the {num_chapters} chapters.",
     agent=outline_creator,
-    context=[story_planning_task, character_development_task, setting_building_task, relationship_architecture_task]
+    context=[story_planning_task, character_development_task, setting_building_task, relationship_architecture_task, item_development_task]
 )
 logging.getLogger("OutlineCreator").info(f"Outline creator task assigned: {outline_creator_task.description}")
 
@@ -218,6 +243,7 @@ outline_compiler_task = Task(
     - Character Profiles: [Provided by the Character Agent]
     - Relationship Dynamics: [Provided by the Relationship Architect Agent]
     - Chapter Outlines: [Provided by the Outline Creator Agent]
+    - Item Profiles: [Provided by the Item Developer Agent]
 
     Format your response as:
     - STORY ARC PLAN: [Insert the Story Planner Agent's output here]
@@ -225,19 +251,20 @@ outline_compiler_task = Task(
     - CHARACTER PROFILES: [Insert the Character Agent's output here]
     - RELATIONSHIP DYNAMICS: [Insert the Relationship Architect Agent's output here]
     - CHAPTER OUTLINES: [Insert the Outline Creator Agent's output here]
+    - ITEM PROFILES: [Insert the Item Developer Agent's output here]
 
     Combine all this information into a single, cohesive document. Ensure the outline is well-structured, detailed, and follows a logical sequence.
     """,
-    expected_output=f"A comprehensive and well-structured outline for the {num_chapters}-chapter story, integrating all elements.",
+    expected_output=f"A comprehensive and well-structured outline for the {num_chapters}-chapter story, integrating all elements including item profiles.",
     agent=outline_compiler,
-    context=[story_planning_task, setting_building_task, character_development_task, relationship_architecture_task, outline_creator_task]
+    context=[story_planning_task, setting_building_task, character_development_task, relationship_architecture_task, outline_creator_task, item_development_task]
 )
 logging.getLogger("OutlineCompiler").info(f"Outline compiler task assigned: {outline_compiler_task.description}")
 
 # Create a Crew and assign the task
 outline_crew = Crew(
-    agents=[story_planner, setting_builder, character_agent, relationship_architect, outline_creator, outline_compiler],
-    tasks=[story_planning_task, setting_building_task, character_development_task, relationship_architecture_task, outline_creator_task, outline_compiler_task],
+    agents=[story_planner, setting_builder, character_agent, relationship_architect, outline_creator, outline_compiler, item_developer],
+    tasks=[story_planning_task, setting_building_task, character_development_task, relationship_architecture_task, item_development_task, outline_creator_task, outline_compiler_task],
     verbose=True,
     process=Process.sequential
 )
@@ -349,7 +376,7 @@ def create_chapter_tasks(chapter_number, outline_context, context_window_size, g
     logging.getLogger("Reviser").info(f"Revise task for Chapter {chapter_number} assigned: {revise_task.description}")
 
     edit_task = Task(
-        description=f"""Edit Chapter {chapter_number}, focusing on grammar, style, and overall flow. Incorporate changes directly into the chapter text. 
+        description=f"""Edit Chapter {chapter_number}, focusing on grammar, style, and overall flow. Incorporate changes directly into the chapter text.
         Verify that the chapter meets the length requirement of between {min_words} and {max_words} words. If it's too short, provide specific feedback to the Writer on what areas need expansion.
         Refer to the outline for context: {outline_context}""",
         expected_output=f"The final, edited version of Chapter {chapter_number}, meeting the minimum word count requirement.",

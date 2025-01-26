@@ -50,16 +50,18 @@ def create_agents(model_to_use, num_chapters, outline_context, genre_config):
         role='Outline Creator',
         goal=f"""
         Generate detailed chapter outlines based on the story arc plan for a {num_chapters}-chapter story.
-        Include specific chapter titles, key events, character developments, setting, and tone for each chapter.
+        Include specific chapter titles, key events, character developments, setting, and relevant items for each chapter.
         ONLY CREATE THE OUTLINE FOR ONE CHAPTER AT A TIME
         Consider the outline: {outline_context}
         Incorporate the genre-specific narrative style: {genre_config.get('NARRATIVE_STYLE')}.
+        Ensure each chapter outline considers and lists relevant characters, locations, and items.
         """,
         backstory=f"""
         You are an expert outline creator who generates detailed chapter outlines based on story premises and story arc plans.
-        Your outlines must follow a strict format, including Chapter Title, Key Events, Character Developments, Setting, and Tone for each chapter.
+        Your outlines must follow a strict format, including Chapter Title, Key Events, Character Developments, Setting, Tone, and Items for each chapter.
         You are creating an outline for a {num_chapters}-chapter story in the {genre_config.get('GENRE')} genre.
         You create outlines for ONE CHAPTER AT A TIME.
+        Your outlines must explicitly list characters, locations, and items relevant to each chapter.
         """,
         verbose=True,
         model_to_use=model_to_use
@@ -129,11 +131,14 @@ def create_agents(model_to_use, num_chapters, outline_context, genre_config):
         Refine chapter outlines to maximize plot effectiveness and pacing at the chapter level for a {num_chapters}-chapter story, ensuring each chapter's plot is engaging, well-paced, and contributes to the overall story arc.
         Consider the outline: {outline_context}
         Incorporate the genre-specific plot complexity: {genre_config.get('PLOT_COMPLEXITY')}.
+        Ensure each chapter outline clearly defines the Goal, Conflict, and Outcome for each scene.
+        Ensure each chapter outline links relevant characters, locations, and items to the scenes.
         """,
         backstory=f"""
         You are the plot detail expert, responsible for ensuring each chapter's plot is engaging, well-paced, and contributes to the overall story arc.
         You refine chapter outlines to maximize plot effectiveness and pacing at the chapter level.
         You are working on a {num_chapters}-chapter story in the {genre_config.get('GENRE')} genre.
+        Your refined outlines must include specific Goal, Conflict, and Outcome for each scene and explicitly link characters, locations, and items.
         """,
         verbose=True,
         model_to_use=model_to_use
@@ -148,15 +153,15 @@ def create_agents(model_to_use, num_chapters, outline_context, genre_config):
         Adhere to the specified tone and style for each chapter, and follow the genre-specific instructions.
         Each chapter MUST be at least {genre_config.get('MIN_WORDS_PER_CHAPTER', 1600)} words in length. Consider this a HARD REQUIREMENT. If your output is shorter, continue writing until you reach this minimum length.
         ONLY WRITE ONE CHAPTER AT A TIME.
-        Refer to the provided chapter outline for the content and structure of each chapter.
+        Refer to the provided chapter outline for the content and structure of each chapter, including the list of items relevant to the chapter.
         """,
         backstory=f"""
         You are an expert creative writer who brings scenes to life with vivid prose, compelling characters, and engaging plots.
-        You write according to the detailed chapter outline, incorporating all Key Events, Character Developments, Setting, and Tone, while maintaining consistent character voices and personalities.
+        You write according to the detailed chapter outline, incorporating all Key Events, Character Developments, Setting, Tone, and Items, while maintaining consistent character voices and personalities.
         You use the character stats and speech patterns defined by the Character Agent to guide your writing.
         You are working on a {num_chapters}-chapter story in the {genre_config.get('GENRE')} genre, ONE CHAPTER AT A TIME, with each chapter being at least {genre_config.get('MIN_WORDS_PER_CHAPTER', 1600)} words long.
         You are committed to meeting the word count for each chapter and will not stop writing until this requirement is met.
-        You will be provided with the specific outline for each chapter and you must adhere to it.
+        You will be provided with the specific outline for each chapter and you must adhere to it, paying special attention to the items listed for each chapter.
         """,
         verbose=True,
         model_to_use=model_to_use
@@ -265,4 +270,24 @@ def create_agents(model_to_use, num_chapters, outline_context, genre_config):
         model_to_use=model_to_use
     )
 
-    return [story_planner, outline_creator, setting_builder, character_agent, relationship_architect, plot_agent, writer, editor, memory_keeper, researcher, critic, reviser, outline_compiler]
+    # Item Developer: Creates and maintains story items
+    item_developer = create_agent_with_logger(
+        role='Item Developer',
+        goal=f"""
+        Develop and maintain a consistent and relevant list of items for the {num_chapters}-chapter story.
+        Define each item with a name, detailed description, purpose in the story, and potential symbolic meaning.
+        Track how each item is used across different chapters and scenes.
+        Consider the outline: {outline_context}
+        Incorporate the genre-specific item significance: {genre_config.get('ITEM_SIGNIFICANCE', 'medium')}. # Assuming you add ITEM_SIGNIFICANCE to genre_config
+        """,
+        backstory=f"""
+        You are the expert in item creation and management, responsible for enriching the story with meaningful items.
+        You define and track all important items, ensuring they are consistent with the world-building and contribute to the plot and themes.
+        You are working on a {num_chapters}-chapter story in the {genre_config.get('GENRE')} genre.
+        """,
+        verbose=True,
+        model_to_use=model_to_use
+    )
+
+
+    return [story_planner, outline_creator, setting_builder, character_agent, relationship_architect, plot_agent, writer, editor, memory_keeper, researcher, critic, reviser, outline_compiler, item_developer]
