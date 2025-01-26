@@ -376,7 +376,7 @@ def create_chapter_tasks(chapter_number, outline_context, context_window_size, g
         agent=reviser,
         context=[outline_creator_task, write_task]
     )
-    logging.getLogger("Reviser").info(f"Reviser task for Chapter {chapter_number} assigned: {revise_task.description}")
+    logging.getLogger("Reviser").info(f"Revise task for Chapter {chapter_number} assigned: {revise_task.description}")
 
     edit_task = Task(
         description=f"""Edit Chapter {chapter_number}, focusing on grammar, style, and overall flow. Incorporate changes directly into the chapter text.
