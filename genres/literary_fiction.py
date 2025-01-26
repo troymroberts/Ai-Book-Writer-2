@@ -4,7 +4,7 @@ Focused on character-driven narratives with deep themes and psychological comple
 """
 
 # --- General Parameters ---
-NUM_CHAPTERS = 25          # Default number of chapters
+NUM_CHAPTERS = 2          # Default number of chapters
 MIN_WORDS_PER_CHAPTER = 2500  # Minimum word count per chapter
 MAX_WORDS_PER_CHAPTER = 4000  # Maximum word count per chapter
 
