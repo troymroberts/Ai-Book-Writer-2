@@ -13,21 +13,7 @@ logging.basicConfig(
 def create_agent_with_logger(role, goal, backstory, verbose, model_to_use, **kwargs):
     logger = logging.getLogger(role)
     logger.info(f"{role} agent created.")
-
-    # NEW: Log the prompt before making the LLM call
-    tools = kwargs.get('tools', [])
-    agent_prompt = Agent(
-        role=role,
-        goal=goal,
-        backstory=backstory,
-        verbose=verbose,
-        llm=model_to_use,
-        tools=tools  # Pass tools here as well
-    )._prepare_llm_message()  # Get the prepared message list
-
-    logger.debug(f"{role} Agent Prompt:\n{agent_prompt}")  # Log the prompt
-
-    return Agent(  # Agent creation remains the same
+    return Agent(
         role=role,
         goal=goal,
         backstory=backstory,
@@ -279,32 +265,3 @@ def create_agents(model_to_use, num_chapters, outline_context, genre_config):
         Compile the complete book outline, integrating the overall story arc plan, setting details, character profiles, relationship dynamics, and individual chapter outlines into a single, cohesive document.
         Ensure the outline is well-structured, detailed, and follows the specified format.
         Output the ENTIRE outline, including all sections.
-        """,
-        backstory="""
-        You are an expert outline compiler, responsible for assembling the final book outline from the contributions of other agents.
-        You ensure the outline is comprehensive, well-organized, and ready for use by the writing team.
-        """,
-        verbose=True,
-        model_to_use=model_to_use
-    )
-
-    # Item Developer: Creates and maintains story items
-    item_developer = create_agent_with_logger(
-        role='Item Developer',
-        goal=f"""
-        Develop and maintain a consistent and relevant list of items for the {num_chapters}-chapter story.
-        Define each item with a name, detailed description, purpose in the story, and potential symbolic meaning.
-        Track how each item is used across different chapters and scenes.
-        Consider the outline: {outline_context}
-        Incorporate the genre-specific item significance: {genre_config.get('ITEM_SIGNIFICANCE', 'medium')}. # Assuming you add ITEM_SIGNIFICANCE to genre_config
-        """,
-        backstory=f"""
-        You are the expert in item creation and management, responsible for enriching the story with meaningful items.
-        You define and track all important items, ensuring they are consistent with the world-building and contribute to the plot and themes.
-        You are working on a {num_chapters}-chapter story in the {genre_config.get('GENRE')} genre.
-        """,
-        verbose=True,
-        model_to_use=model_to_use
-    )
-
-    return [story_planner, outline_creator, setting_builder, character_agent, relationship_architect, plot_agent, writer, editor, memory_keeper, researcher, critic, reviser, outline_compiler, item_developer]
