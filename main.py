@@ -1,3 +1,4 @@
+--- START OF FILE main.py ---
 import os
 import shutil
 import importlib
@@ -145,7 +146,7 @@ outline_crew = Crew(
         outline_creator_task,
         outline_compiler_task
     ],
-    verbose=2, # Process verbosity: 1 for smart, 2 for high
+    verbose=True,  # Changed from 2 to True
     process=Process.sequential  # Tasks will be executed in order
 )
 
@@ -285,7 +286,7 @@ for chapter_number in range(1, num_chapters + 1):
         chapter_crew = Crew(
             agents=[researcher, writer, critic, editor, reviser], # Removed memory_keeper from chapter_crew
             tasks=chapter_tasks,
-            verbose=2, # Chapter process verbosity: 1 for smart, 2 for high
+            verbose=True, # Chapter process verbosity: 1 for smart, 2 for high - changed to True
             process=Process.sequential # For chapter generation, process sequentially
         )
         chapter_crew.kickoff()
